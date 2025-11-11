@@ -78,7 +78,9 @@ export async function serve(options: ProxyOptions) {
         console.error('WebSocket upgrade error:', error);
         try {
           socket.destroy();
-        } catch {}
+        } catch {
+          // Ignore errors during socket destruction
+        }
       }
     });
   }
@@ -155,7 +157,9 @@ export async function serve(options: ProxyOptions) {
         console.error('WebSocket upgrade error:', error);
         try {
           socket.destroy();
-        } catch {}
+        } catch {
+          // Ignore errors during socket destruction
+        }
       }
     },
   };
@@ -278,7 +282,9 @@ async function proxyRequest(ctx: RequestContext, target: string): Promise<void> 
       if (err) {
         try {
           res.destroy(err);
-        } catch {}
+        } catch {
+          // Ignore errors during response destruction
+        }
       }
     });
   });
@@ -294,7 +300,9 @@ async function proxyRequest(ctx: RequestContext, target: string): Promise<void> 
     if (err) {
       try {
         proxyReq.destroy(err);
-      } catch {}
+      } catch {
+        // Ignore errors during request destruction
+      }
     }
   });
 }

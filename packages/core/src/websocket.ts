@@ -123,7 +123,9 @@ export async function proxyWebSocket(
       try {
         proxySocket.destroy();
         socket.destroy();
-      } catch {}
+      } catch {
+        // Ignore errors during socket destruction
+      }
     };
 
     proxySocket.on('close', cleanup);
@@ -137,7 +139,9 @@ export async function proxyWebSocket(
       console.error('WebSocket proxy error:', error);
       try {
         socket.destroy();
-      } catch {}
+      } catch {
+        // Ignore errors during socket destruction
+      }
     }
   });
 
@@ -209,7 +213,9 @@ export function createWebSocketHandler(
       console.error('WebSocket server error:', error);
       try {
         socket.destroy();
-      } catch {}
+      } catch {
+        // Ignore errors during socket destruction
+      }
     }
   };
 }
@@ -219,8 +225,8 @@ export function createWebSocketHandler(
  */
 function createWebSocketConnection(
   socket: Socket,
-  key: string,
-  protocol?: string | string[]
+  _key: string,
+  _protocol?: string | string[]
 ): WebSocketConnection {
   let readyState = WS_READY;
   const messageHandlers: Array<(data: Buffer) => void> = [];
@@ -236,7 +242,7 @@ function createWebSocketConnection(
 
   function _processFrames() {
     while (frameBuffer.length >= 2) {
-      const fin = (frameBuffer[0] & 0x80) !== 0;
+      const _fin = (frameBuffer[0] & 0x80) !== 0;
       const opcode = frameBuffer[0] & 0x0f;
       const masked = (frameBuffer[1] & 0x80) !== 0;
       let payloadLength = frameBuffer[1] & 0x7f;
@@ -276,7 +282,7 @@ function createWebSocketConnection(
         socket.write(pongFrame);
       } else if (opcode === 0x1 || opcode === 0x2) {
         // Text or binary frame
-        let payload = frameBuffer.subarray(headerLength + maskKey, totalLength);
+        const payload = frameBuffer.subarray(headerLength + maskKey, totalLength);
         if (masked) {
           const mask = frameBuffer.subarray(headerLength, headerLength + 4);
           for (let i = 0; i < payload.length; i++) {
