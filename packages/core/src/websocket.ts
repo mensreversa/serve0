@@ -242,7 +242,6 @@ function createWebSocketConnection(
 
   function _processFrames() {
     while (frameBuffer.length >= 2) {
-      const _fin = (frameBuffer[0] & 0x80) !== 0;
       const opcode = frameBuffer[0] & 0x0f;
       const masked = (frameBuffer[1] & 0x80) !== 0;
       let payloadLength = frameBuffer[1] & 0x7f;
