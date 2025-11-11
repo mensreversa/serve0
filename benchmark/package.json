@@ -1,0 +1,22 @@
+{
+  "name": "serve0-benchmark",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Performance benchmarks for serve0",
+  "type": "module",
+  "scripts": {
+    "bench": "tsx src/index.ts",
+    "bench:proxy": "tsx src/proxy.ts",
+    "bench:throughput": "tsx src/throughput.ts",
+    "bench:latency": "tsx src/latency.ts"
+  },
+  "dependencies": {
+    "@serve0/core": "file:../packages/core",
+    "autocannon": "^7.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.1",
+    "tsx": "^4.20.6"
+  }
+}
+

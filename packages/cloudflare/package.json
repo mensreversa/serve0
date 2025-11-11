@@ -1,0 +1,28 @@
+{
+  "name": "@serve0/cloudflare",
+  "version": "0.1.0",
+  "description": "Cloudflare DNS provider for serve0 ACME DNS-01 challenges",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "test": "jest"
+  },
+  "keywords": [
+    "dns",
+    "cloudflare",
+    "acme",
+    "letsencrypt"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@serve0/core": "file:../core"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3"
+  }
+}
