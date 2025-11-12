@@ -89,6 +89,7 @@ describe('Serve0', () => {
   describe('Request Routing', () => {
     let app: ReturnType<typeof serve0>;
     let stop: () => Promise<void>;
+    let handleRequest: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
 
     beforeEach(async () => {
       app = serve0();
@@ -97,6 +98,7 @@ describe('Serve0', () => {
       });
       const result = await app.serve(0);
       stop = result.stop;
+      handleRequest = result.handleRequest;
     });
 
     afterEach(async () => {
@@ -128,7 +130,7 @@ describe('Serve0', () => {
         destroy: jest.fn(),
       } as unknown as ServerResponse;
 
-      await app.handleRequest(req, res);
+      await handleRequest(req, res);
 
       expect(route1).toHaveBeenCalled();
       expect(route2).not.toHaveBeenCalled();
@@ -148,7 +150,7 @@ describe('Serve0', () => {
         destroy: jest.fn(),
       } as unknown as ServerResponse;
 
-      await app.handleRequest(req, res);
+      await handleRequest(req, res);
 
       expect(res.statusCode).toBe(404);
       expect(res.end).toHaveBeenCalledWith('Site not found');
@@ -174,7 +176,7 @@ describe('Serve0', () => {
         destroy: jest.fn(),
       } as unknown as ServerResponse;
 
-      await app.handleRequest(req, res);
+      await handleRequest(req, res);
 
       expect(route).toHaveBeenCalled();
     });
@@ -214,7 +216,7 @@ describe('Serve0', () => {
         route: jest.fn().mockResolvedValue('http://localhost:3000'),
       });
 
-      const { stop } = await app.serve(0);
+      const { stop, handleRequest } = await app.serve(0);
 
       const req = {
         headers: { host: 'localhost' },
@@ -229,7 +231,7 @@ describe('Serve0', () => {
         destroy: jest.fn(),
       } as unknown as ServerResponse;
 
-      await app.handleRequest(req, res);
+      await handleRequest(req, res);
 
       expect(onRequestFn).toHaveBeenCalled();
 
@@ -238,25 +240,6 @@ describe('Serve0', () => {
   });
 
   describe('Error Handling', () => {
-    test('should throw when handleRequest called before serve', async () => {
-      const app = serve0();
-
-      const req = {
-        headers: { host: 'localhost' },
-        url: '/test',
-        method: 'GET',
-      } as unknown as IncomingMessage;
-
-      const res = {
-        statusCode: 200,
-        setHeader: jest.fn(),
-        end: jest.fn(),
-        destroy: jest.fn(),
-      } as unknown as ServerResponse;
-
-      await expect(app.handleRequest(req, res)).rejects.toThrow('Server not started');
-    });
-
     test('should handle route returning null', async () => {
       const app = serve0();
 
@@ -264,7 +247,7 @@ describe('Serve0', () => {
         route: jest.fn().mockResolvedValue(null),
       });
 
-      const { stop } = await app.serve(0);
+      const { stop, handleRequest } = await app.serve(0);
 
       const req = {
         headers: { host: 'localhost' },
@@ -279,7 +262,7 @@ describe('Serve0', () => {
         destroy: jest.fn(),
       } as unknown as ServerResponse;
 
-      await app.handleRequest(req, res);
+      await handleRequest(req, res);
 
       expect(res.statusCode).toBe(404);
       expect(res.end).toHaveBeenCalledWith('No route found');
