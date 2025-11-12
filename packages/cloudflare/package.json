@@ -1,6 +1,7 @@
 {
   "name": "@serve0/cloudflare",
   "version": "0.1.0",
+  "type": "module",
   "description": "Cloudflare DNS provider for serve0 ACME DNS-01 challenges",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,7 +24,7 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.10.0",
+    "@types/node": "^24.10.1",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.5",
     "typescript": "^5.9.3"

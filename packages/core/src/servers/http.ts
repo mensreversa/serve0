@@ -1,7 +1,7 @@
 import { request as httpRequest, IncomingMessage, ServerResponse } from 'http';
 import { request as httpsRequest } from 'https';
 import { pipeline } from 'stream';
-import { Middleware, ProxyContext, RequestContext, SiteConfig } from './types.js';
+import { Middleware, ProxyContext, RequestContext, SiteConfig } from '../types.js';
 
 export function findMatchingSite(req: IncomingMessage, sites: SiteConfig[]): SiteConfig | null {
   const host = req.headers.host;

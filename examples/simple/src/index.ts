@@ -1,4 +1,6 @@
-import { ConsoleLoggerPlugin, InMemoryMetricsPlugin, serve0 } from '@serve0/core';
+import { serve0 } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/logger';
+import { InMemoryMetricsPlugin } from '@serve0/metrics';
 
 async function main() {
   const app = serve0();

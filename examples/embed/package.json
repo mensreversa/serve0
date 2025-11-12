@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@serve0/core": "file:../../packages/core",
+    "@serve0/logger": "file:../../packages/logger",
     "express": "^4.18.2"
   },
   "devDependencies": {

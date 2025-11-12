@@ -4,43 +4,21 @@ export type { ServeOptions } from './serve0.js';
 
 // Export types
 export type {
-  LoadBalanceStrategy,
   Logger,
   Metrics,
   Middleware,
   ProxyContext,
-  ProxyOptions,
   ProxyPlugin,
+  ProxyRouter,
   RequestContext,
   SiteConfig,
   TlsConfig,
 } from './types.js';
 
-// Export plugins
-export { ConsoleLoggerPlugin, FileLoggerPlugin } from './plugins/logger.js';
-
-export { InMemoryMetricsPlugin, PrometheusMetricsPlugin } from './plugins/metrics.js';
-
-export { LeastConnectionsBalancerPlugin, RoundRobinBalancerPlugin } from './plugins/balancer.js';
-
-export { AcmeHttpsPlugin, FileHttpsPlugin } from './plugins/https.js';
-
 // Export ACME interfaces
 export { DNSProvider } from './acme/dns.js';
 export { HttpChallengeHandler } from './acme/http.js';
 export { CertificateManager, FileCertificateManager } from './acme/tls.js';
-
-export {
-  HealthCheckMiddlewarePlugin,
-  LoggingMiddlewarePlugin,
-  MetricsMiddlewarePlugin,
-  RateLimitMiddlewarePlugin,
-  SecurityHeadersMiddlewarePlugin,
-} from './plugins/middleware.js';
-
-export { AuthPlugin } from './plugins/auth.js';
-
-export { CorsPlugin } from './plugins/cors.js';
 
 // Export WebSocket functionality
 export {
@@ -49,6 +27,10 @@ export {
   WS_READY,
   createWebSocketHandler,
   proxyWebSocket,
-} from './websocket.js';
+} from './servers/websocket.js';
 
-export type { WebSocketConfig, WebSocketConnection, WebSocketHandler } from './websocket.js';
+export type {
+  WebSocketConfig,
+  WebSocketConnection,
+  WebSocketHandler,
+} from './servers/websocket.js';

@@ -1,4 +1,5 @@
-import { ConsoleLoggerPlugin, serve0 } from '@serve0/core';
+import { serve0 } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/logger';
 import express from 'express';
 
 async function main() {

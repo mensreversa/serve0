@@ -19,14 +19,14 @@ A high-performance, programmable reverse proxy and edge gateway written entirely
 ### Installation
 
 ```bash
-npm install @serve0/core
+npm install @serve0/core @serve0/logger
 ```
 
 ### Basic Usage
 
 ```typescript
 import { serve0 } from '@serve0/core';
-import { ConsoleLoggerPlugin } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/logger';
 
 const app = serve0();
 
@@ -86,7 +86,7 @@ interface ProxyPlugin {
 
 ```typescript
 import { serve0 } from '@serve0/core';
-import { ConsoleLoggerPlugin } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/logger';
 
 const app = serve0();
 
@@ -108,7 +108,7 @@ const { stop } = await app.serve(8080);
 
 ```typescript
 import { serve0 } from '@serve0/core';
-import { RoundRobinBalancerPlugin } from '@serve0/core';
+import { RoundRobinBalancerPlugin } from '@serve0/balancer';
 
 const app = serve0();
 
@@ -124,28 +124,9 @@ app.plugin(new RoundRobinBalancerPlugin());
 await app.serve(8080);
 ```
 
-### HTTPS with ACME
+### HTTPS
 
-```typescript
-import { serve0 } from '@serve0/core';
-import { AcmeHttpsPlugin } from '@serve0/core';
-
-const app = serve0();
-
-app.handle('example.com', {
-  tls: {
-    email: 'admin@example.com',
-    domains: ['example.com', 'www.example.com'],
-  },
-  route(req) {
-    return 'http://backend:3000';
-  },
-});
-
-app.plugin(new AcmeHttpsPlugin());
-
-await app.serve(443);
-```
+HTTPS is handled at the server level, not as a plugin. Use Node.js HTTPS server directly or configure TLS in your deployment.
 
 ### Docker Deployment
 
@@ -187,23 +168,37 @@ app.handle('example.com', {
 ### Plugin Configuration
 
 ```typescript
+import { ConsoleLoggerPlugin } from '@serve0/logger';
+import { InMemoryMetricsPlugin } from '@serve0/metrics';
+import { RoundRobinBalancerPlugin, LeastConnectionsBalancerPlugin } from '@serve0/balancer';
+import { BasicAuthPlugin, BearerAuthPlugin, ApiKeyAuthPlugin } from '@serve0/auth';
+import { CorsPlugin } from '@serve0/cors';
+import { HealthCheckPlugin } from '@serve0/health';
+import { RateLimitPlugin } from '@serve0/ratelimit';
+import { SecurityPlugin } from '@serve0/security';
+
 // Logging
 new ConsoleLoggerPlugin();
-new FileLoggerPlugin('./logs/app.log');
 
 // Metrics
 new InMemoryMetricsPlugin();
-new PrometheusMetricsPlugin();
 
 // Load Balancing
 new RoundRobinBalancerPlugin();
 new LeastConnectionsBalancerPlugin();
 
 // Security
-new AuthPlugin({
-  type: 'api-key',
-  header: 'x-api-key',
+new BasicAuthPlugin({
   credentials: { admin: 'secret123' },
+});
+
+new BearerAuthPlugin({
+  tokens: ['token1', 'token2'],
+});
+
+new ApiKeyAuthPlugin({
+  apiKeys: ['key1', 'key2'],
+  header: 'x-api-key',
 });
 
 new CorsPlugin({
@@ -211,7 +206,16 @@ new CorsPlugin({
   methods: ['GET', 'POST'],
   credentials: true,
 });
+
+new HealthCheckPlugin({ path: '/health' });
+
+new RateLimitPlugin({ windowMs: 60000, maxRequests: 100 });
+
+new SecurityPlugin();
 ```
+
+<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
+read_file
 
 ## 🐳 Docker Support
 
@@ -285,23 +289,43 @@ npm run docker:run:deno
 - `app.plugin(plugin)`: Add a plugin
 - `app.serve(port, options?)`: Start the server
 
-### Packages
+## 📦 Packages
 
-- **`@serve0/core`**: Core reverse proxy functionality
+Serve0 follows a modular architecture where each plugin is a separate package. This keeps the core lightweight and allows you to install only what you need.
+
+### Core Package
+
+- **`@serve0/core`**: Core reverse proxy functionality, HTTP/HTTPS/WebSocket servers, and ACME support
+
+### Plugin Packages
+
+- **`@serve0/auth`**: Authentication plugins (Basic, Bearer, API Key)
+- **`@serve0/balancer`**: Load balancing plugins (Round-robin, Least connections)
+- **`@serve0/cors`**: CORS plugin
+- **`@serve0/health`**: Health check plugin
+- **`@serve0/logger`**: Logging plugins
+- **`@serve0/metrics`**: Metrics plugins
+- **`@serve0/ratelimit`**: Rate limiting plugin
+- **`@serve0/security`**: Security headers plugin
+
+### DNS Provider Packages (for ACME)
+
 - **`@serve0/cloudflare`**: Cloudflare DNS provider for ACME
 - **`@serve0/route53`**: AWS Route53 DNS provider for ACME
 
-### Plugins
+### Available Plugins
 
 - `ConsoleLoggerPlugin`: Console logging
-- `FileLoggerPlugin`: File logging
 - `InMemoryMetricsPlugin`: In-memory metrics
-- `PrometheusMetricsPlugin`: Prometheus metrics
 - `RoundRobinBalancerPlugin`: Round-robin load balancing
 - `LeastConnectionsBalancerPlugin`: Least connections load balancing
-- `AuthPlugin`: Authentication
+- `BasicAuthPlugin`: Basic authentication
+- `BearerAuthPlugin`: Bearer token authentication
+- `ApiKeyAuthPlugin`: API key authentication
 - `CorsPlugin`: CORS handling
-- `AcmeHttpsPlugin`: ACME HTTPS support
+- `HealthCheckPlugin`: Health check endpoint
+- `RateLimitPlugin`: Rate limiting
+- `SecurityPlugin`: Security headers
 
 ## 🤝 Contributing
 

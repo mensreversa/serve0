@@ -19,6 +19,7 @@ export interface WebSocketConnection {
   on(event: 'close', handler: (code: number, reason: string) => void): void;
   on(event: 'error', handler: (error: Error) => void): void;
   readyState: number;
+  _processFrameData?(data: Buffer): void;
 }
 
 // WebSocket states
@@ -98,7 +99,7 @@ export async function proxyWebSocket(
       responseHeaders.push(`Sec-WebSocket-Protocol: ${protocolHeader}`);
     }
 
-    // Forward extension headers if present
+    // Forward extensions if present
     const extensions = proxyRes.headers['sec-websocket-extensions'];
     if (extensions) {
       responseHeaders.push(`Sec-WebSocket-Extensions: ${extensions}`);
@@ -106,7 +107,7 @@ export async function proxyWebSocket(
 
     socket.write(responseHeaders.join('\r\n') + '\r\n\r\n');
 
-    // Write any buffered data
+    // Forward any buffered data
     if (head && head.length > 0) {
       proxySocket.write(head);
     }
@@ -114,17 +115,17 @@ export async function proxyWebSocket(
       socket.write(proxyHead);
     }
 
-    // Bi-directional piping
+    // Pipe bidirectional data
     proxySocket.pipe(socket, { end: false });
     socket.pipe(proxySocket, { end: false });
 
-    // Handle connection cleanup
+    // Cleanup on close/error
     const cleanup = () => {
       try {
         proxySocket.destroy();
         socket.destroy();
       } catch {
-        // Ignore errors during socket destruction
+        // Ignore
       }
     };
 
@@ -140,13 +141,12 @@ export async function proxyWebSocket(
       try {
         socket.destroy();
       } catch {
-        // Ignore errors during socket destruction
+        // Ignore
       }
     }
   });
 
   proxyReq.on('response', (res) => {
-    // If we get a response instead of upgrade, the upgrade failed
     if (!upgradeHandled && res.statusCode !== 101) {
       console.error(`WebSocket upgrade failed: ${res.statusCode} ${res.statusMessage}`);
       socket.destroy();
@@ -159,12 +159,9 @@ export async function proxyWebSocket(
 /**
  * Create a WebSocket server handler
  */
-export function createWebSocketHandler(
-  handler: WebSocketHandler
-): (req: IncomingMessage, socket: Socket, head: Buffer) => void {
-  return async (req: IncomingMessage, socket: Socket, head: Buffer) => {
+export function createWebSocketHandler(handler: WebSocketHandler) {
+  return async (req: IncomingMessage, socket: Socket, head: Buffer): Promise<void> => {
     try {
-      // Validate WebSocket upgrade request
       if (req.headers.upgrade?.toLowerCase() !== 'websocket') {
         socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
         socket.destroy();
@@ -178,15 +175,13 @@ export function createWebSocketHandler(
         return;
       }
 
-      // Create WebSocket connection wrapper
       const connection = createWebSocketConnection(
         socket,
         key,
         req.headers['sec-websocket-protocol']
       );
-
-      // Send upgrade response
       const accept = generateAccept(key);
+
       const responseHeaders = [
         'HTTP/1.1 101 Switching Protocols',
         'Upgrade: websocket',
@@ -262,8 +257,8 @@ function createWebSocketConnection(
 
       if (frameBuffer.length < totalLength) return;
 
+      // Close frame
       if (opcode === 0x8) {
-        // Close frame
         const code = payloadLength >= 2 ? frameBuffer.readUInt16BE(headerLength + maskKey) : 1000;
         const reason =
           payloadLength > 2
@@ -273,14 +268,16 @@ function createWebSocketConnection(
         closeHandlers.forEach((h) => h(code, reason));
         socket.destroy();
         return;
-      } else if (opcode === 0x9) {
-        // Ping frame - respond with pong
+      }
+      // Ping frame - respond with pong
+      else if (opcode === 0x9) {
         const pongFrame = Buffer.alloc(2);
-        pongFrame[0] = 0x8a; // FIN + PONG
+        pongFrame[0] = 0x8a;
         pongFrame[1] = 0x00;
         socket.write(pongFrame);
-      } else if (opcode === 0x1 || opcode === 0x2) {
-        // Text or binary frame
+      }
+      // Text or binary frame
+      else if (opcode === 0x1 || opcode === 0x2) {
         const payload = frameBuffer.subarray(headerLength + maskKey, totalLength);
         if (masked) {
           const mask = frameBuffer.subarray(headerLength, headerLength + 4);
@@ -311,18 +308,18 @@ function createWebSocketConnection(
       }
 
       const frame = Buffer.alloc(2 + buffer.length);
-      frame[0] = 0x81; // FIN + TEXT
+      frame[0] = 0x81; // FIN + text frame
       frame[1] = buffer.length;
       buffer.copy(frame, 2);
       socket.write(frame);
     },
 
-    close(code = 1000, reason = '') {
+    close(code: number = 1000, reason: string = '') {
       if (readyState === WS_CLOSED || readyState === WS_CLOSING) return;
-      readyState = WS_CLOSING;
 
+      readyState = WS_CLOSING;
       const closeFrame = Buffer.alloc(2 + (reason ? 2 + Buffer.byteLength(reason) : 0));
-      closeFrame[0] = 0x88; // FIN + CLOSE
+      closeFrame[0] = 0x88; // FIN + close frame
       if (reason) {
         closeFrame[1] = 2 + Buffer.byteLength(reason);
         closeFrame.writeUInt16BE(code, 2);
@@ -351,13 +348,12 @@ function createWebSocketConnection(
     },
   };
 
-  // Internal method to process frame data (not part of public interface)
-  (connection as any)._processFrameData = (data: Buffer) => {
+  connection._processFrameData = (data: Buffer) => {
     frameBuffer = Buffer.concat([frameBuffer, data]);
     _processFrames();
   };
 
-  socket.on('error', (error) => {
+  socket.on('error', (error: Error) => {
     errorHandlers.forEach((h) => h(error));
   });
 
@@ -369,9 +365,6 @@ function createWebSocketConnection(
   return connection;
 }
 
-/**
- * Generate Sec-WebSocket-Accept header value
- */
 function generateAccept(key: string): string {
   const WS_MAGIC = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
   return createHash('sha1')

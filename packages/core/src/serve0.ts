@@ -2,12 +2,9 @@ import cluster from 'cluster';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { createServer as createHttp2Server, Http2ServerRequest, Http2ServerResponse } from 'http2';
 import { cpus } from 'os';
-import { handleRequest } from './http.js';
-import { RoundRobinBalancerPlugin } from './plugins/balancer.js';
-import { ConsoleLoggerPlugin } from './plugins/logger.js';
-import { InMemoryMetricsPlugin } from './plugins/metrics.js';
+import { handleRequest } from './servers/http.js';
+import { createWebSocketHandler, proxyWebSocket } from './servers/websocket.js';
 import { ProxyContext, ProxyPlugin, SiteConfig } from './types.js';
-import { createWebSocketHandler, proxyWebSocket } from './websocket.js';
 
 export interface ServeOptions {
   host?: string;
@@ -45,12 +42,7 @@ export class Serve0 {
   }> {
     this.ctx = {
       sites: this.sites,
-      plugins: [
-        new ConsoleLoggerPlugin(),
-        new InMemoryMetricsPlugin(),
-        new RoundRobinBalancerPlugin(),
-        ...this.plugins,
-      ],
+      plugins: this.plugins,
     };
 
     for (const plugin of this.ctx.plugins) {

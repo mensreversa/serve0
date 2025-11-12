@@ -12,7 +12,7 @@ npm install @serve0/core
 
 ```typescript
 import { serve0 } from '@serve0/core';
-import { ConsoleLoggerPlugin } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/logger';
 
 const app = serve0();
 

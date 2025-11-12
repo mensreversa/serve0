@@ -1,4 +1,5 @@
-import { Middleware, ProxyContext, ProxyPlugin, RequestContext } from '../types.js';
+import { ProxyPlugin, RequestContext } from '@serve0/core';
+import { IncomingMessage, ServerResponse } from 'http';
 
 export interface CorsConfig {
   origin?: string | string[] | boolean;
@@ -23,30 +24,25 @@ export class CorsPlugin implements ProxyPlugin {
     };
   }
 
-  setup?(_ctx: ProxyContext): void {
-    // Setup logic if needed
+  async onRequest(req: IncomingMessage, ctx: RequestContext): Promise<ServerResponse | void> {
+    const { res } = ctx;
+    const origin = req.headers.origin as string | undefined;
+
+    // Set CORS headers for all requests
+    this.setCorsHeaders(res, origin);
+
+    // Handle preflight OPTIONS requests
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204;
+      res.end();
+      return res as unknown as ServerResponse;
+    }
+
+    // For non-OPTIONS requests, return void to continue processing
+    return;
   }
 
-  private createCorsMiddleware(): Middleware {
-    return async (ctx: RequestContext, next: () => Promise<void>) => {
-      const { req, res } = ctx;
-
-      // Handle preflight requests
-      if (req.method === 'OPTIONS') {
-        this.setCorsHeaders(res, req.headers.origin as string);
-        res.statusCode = 204;
-        res.end();
-        return;
-      }
-
-      // Set CORS headers for actual requests
-      this.setCorsHeaders(res, req.headers.origin as string);
-
-      await next();
-    };
-  }
-
-  private setCorsHeaders(res: RequestContext['res'], origin?: string): void {
+  private setCorsHeaders(res: ServerResponse, origin?: string): void {
     // Origin
     if (this.config.origin === true) {
       res.setHeader('Access-Control-Allow-Origin', origin || '*');
