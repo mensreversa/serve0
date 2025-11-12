@@ -1,5 +1,5 @@
 // Serve0 - Modern Express-like API
-export { serve0, Serve0 } from './serve0.js';
+export { Serve0, serve0 } from './serve0.js';
 export type { ServeOptions } from './serve0.js';
 
 // Export types

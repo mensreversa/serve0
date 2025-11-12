@@ -22,7 +22,8 @@ export class Serve0 {
   private sites: SiteConfig[] = [];
   private plugins: ProxyPlugin[] = [];
   private ctx: ProxyContext | null = null;
-  private server: ReturnType<typeof createServer> | ReturnType<typeof createHttp2Server> | null = null;
+  private server: ReturnType<typeof createServer> | ReturnType<typeof createHttp2Server> | null =
+    null;
 
   handle(domain: string, config: Omit<SiteConfig, 'domain'>): this {
     this.sites.push({ domain, ...config });
@@ -34,7 +35,10 @@ export class Serve0 {
     return this;
   }
 
-  async serve(port: number, options?: ServeOptions): Promise<{
+  async serve(
+    port: number,
+    options?: ServeOptions
+  ): Promise<{
     stop: () => Promise<void>;
     handleRequest: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
     handleUpgrade: (req: IncomingMessage, socket: any, head: Buffer) => Promise<void>;
@@ -58,7 +62,12 @@ export class Serve0 {
     };
 
     const http2Handler = async (req: Http2ServerRequest, res: Http2ServerResponse) => {
-      if (this.ctx) await handleRequest(req as unknown as IncomingMessage, res as unknown as ServerResponse, this.ctx);
+      if (this.ctx)
+        await handleRequest(
+          req as unknown as IncomingMessage,
+          res as unknown as ServerResponse,
+          this.ctx
+        );
     };
 
     this.server = options?.http2 ? createHttp2Server({}, http2Handler) : createServer(http1Handler);
@@ -81,7 +90,13 @@ export class Serve0 {
             socket.destroy();
             return;
           }
-          await proxyWebSocket(req as IncomingMessage, socket, head, target, site.websocket?.config);
+          await proxyWebSocket(
+            req as IncomingMessage,
+            socket,
+            head,
+            target,
+            site.websocket?.config
+          );
         } catch (error) {
           console.error('WebSocket upgrade error:', error);
           try {
@@ -94,10 +109,15 @@ export class Serve0 {
     }
 
     if (options?.cluster?.enabled && cluster.isPrimary) {
-      const workerCount = options.cluster.workers && options.cluster.workers > 0 ? options.cluster.workers : cpus().length;
+      const workerCount =
+        options.cluster.workers && options.cluster.workers > 0
+          ? options.cluster.workers
+          : cpus().length;
       for (let i = 0; i < workerCount; i++) cluster.fork();
       cluster.on('exit', () => cluster.fork());
-      console.log(`Serve0 primary ${process.pid} started ${workerCount} workers on ${options?.host || '0.0.0.0'}:${port}`);
+      console.log(
+        `Serve0 primary ${process.pid} started ${workerCount} workers on ${options?.host || '0.0.0.0'}:${port}`
+      );
       return {
         stop: async () => {
           /* Primary doesn't stop workers directly */
@@ -113,7 +133,9 @@ export class Serve0 {
 
     return new Promise((resolve, reject) => {
       this.server?.listen(port, options?.host || '0.0.0.0', () => {
-        console.log(`Serve0 started on ${options?.host || '0.0.0.0'}:${port}${options?.http2 ? ' [HTTP/2]' : ''}`);
+        console.log(
+          `Serve0 started on ${options?.host || '0.0.0.0'}:${port}${options?.http2 ? ' [HTTP/2]' : ''}`
+        );
         resolve({
           stop: async () => {
             return new Promise<void>((stopResolve) => {

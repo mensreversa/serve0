@@ -1,4 +1,4 @@
-import { IncomingMessage, request as httpRequest, ServerResponse } from 'http';
+import { request as httpRequest, IncomingMessage, ServerResponse } from 'http';
 import { request as httpsRequest } from 'https';
 import { pipeline } from 'stream';
 import { Middleware, ProxyContext, RequestContext, SiteConfig } from './types.js';
@@ -29,7 +29,10 @@ export function normalizeHeaders(
   return normalized;
 }
 
-export async function executeMiddleware(ctx: RequestContext, middleware: Middleware[]): Promise<void> {
+export async function executeMiddleware(
+  ctx: RequestContext,
+  middleware: Middleware[]
+): Promise<void> {
   let index = 0;
   const next = async (): Promise<void> => {
     if (index < middleware.length) await middleware[index++](ctx, next);
@@ -77,7 +80,11 @@ export async function proxyRequest(ctx: RequestContext, target: string): Promise
   });
 }
 
-export async function handleRequest(req: IncomingMessage, res: ServerResponse, ctx: ProxyContext): Promise<void> {
+export async function handleRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: ProxyContext
+): Promise<void> {
   try {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
     const requestCtx: RequestContext = {
@@ -124,4 +131,3 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse, c
     res.end('Internal Server Error');
   }
 }
-
