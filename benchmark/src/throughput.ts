@@ -1,5 +1,5 @@
 import autocannon from 'autocannon';
-import { serve, site } from '@serve0/core';
+import { serve0 } from '@serve0/core';
 import { createServer } from 'http';
 
 async function benchmarkThroughput() {
@@ -7,30 +7,27 @@ async function benchmarkThroughput() {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('x'.repeat(1024)); // 1KB response
   });
-  
-  await new Promise<void>(resolve => {
+
+  await new Promise<void>((resolve) => {
     backend.listen(3000, resolve);
   });
 
-  const proxy = await serve({
-    sites: [
-      site('localhost', {
-        route() {
-          return 'http://localhost:3000';
-        }
-      })
-    ],
-    port: 8080
+  const app = serve0();
+
+  app.handle('localhost', {
+    route() {
+      return 'http://localhost:3000';
+    },
   });
 
-  await proxy.start();
+  const { stop } = await app.serve(8080);
   console.log('Running throughput benchmark (high concurrency)...\n');
 
   const result = await autocannon({
     url: 'http://localhost:8080',
     connections: 200,
     duration: 20,
-    pipelining: 5
+    pipelining: 5,
   });
 
   console.log('=== Throughput Benchmark ===');
@@ -39,7 +36,7 @@ async function benchmarkThroughput() {
   console.log(`Throughput: ${(result.throughput.total / 1024 / 1024).toFixed(2)} MB/s`);
   console.log(`Duration: ${result.duration}s`);
 
-  await proxy.stop();
+  await stop();
   backend.close();
 }
 

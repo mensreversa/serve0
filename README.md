@@ -1,14 +1,13 @@
 # Serve0
 
-A high-performance, programmable reverse proxy and edge gateway written entirely in TypeScript with an Angular signals-style API.
+A high-performance, programmable reverse proxy and edge gateway written entirely in TypeScript with an Express-like API.
 
 ## ✨ Features
 
 - 🚀 **Extremely Fast**: Built with native Node.js `http`/`https` modules
-- 🎯 **Angular Signals Style**: Modern, functional API inspired by Angular signals
+- 🎯 **Express-like API**: Clean, chainable API for easy configuration
 - 🔄 **Load Balancing**: Round-robin, least-connections, sticky sessions
 - 🧩 **Plugin System**: Modular middleware-based design
-- 🔄 **Hot Reload**: Dynamic configuration using plain TypeScript
 - 🔒 **HTTPS Support**: Built-in HTTPS with ACME (Let's Encrypt) support
 - 📦 **Zero Dependencies**: No external runtime dependencies
 - 🏃 **Multi-Runtime**: Runs on Node.js, Bun, or Deno
@@ -20,73 +19,54 @@ A high-performance, programmable reverse proxy and edge gateway written entirely
 ### Installation
 
 ```bash
-npm install serve0
+npm install @serve0/core
 ```
 
 ### Basic Usage
 
 ```typescript
-import { createProxy, site, ConsoleLoggerPlugin } from 'serve0';
+import { serve0 } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/core';
 
-const proxy = await createProxy({
-  runtime: 'node',
-  sites: [
-    site('example.com', {
-      route(req) {
-        if (req.url?.startsWith('/api')) {
-          return 'http://localhost:4000';
-        }
-        return 'http://localhost:3000';
-      },
-    }),
-  ],
-  plugins: [new ConsoleLoggerPlugin()],
+const app = serve0();
+
+app.handle('localhost', {
+  route(req) {
+    if (req.url?.startsWith('/api')) {
+      return 'http://localhost:4000';
+    }
+    return 'http://localhost:3000';
+  },
 });
 
-await proxy.start();
-```
+app.plugin(new ConsoleLoggerPlugin());
 
-### CLI Usage
-
-```bash
-# Start the proxy
-serve0 start
-
-# Start with custom port
-serve0 start --port 3000
-
-# Start with HTTPS
-serve0 start --https-key ./key.pem --https-cert ./cert.pem
-
-# Start with ACME (Let's Encrypt)
-serve0 start --acme-email admin@example.com --acme-domains example.com,www.example.com
-
-# Check status
-serve0 status
+const { stop } = await app.serve(8080);
 ```
 
 ## 🏗️ Architecture
 
 ### Modern API Design
 
-Serve0 uses an Angular signals-inspired API that's clean, functional, and easy to understand:
+Serve0 uses an Express-like API that's clean, chainable, and easy to understand:
 
 ```typescript
-// Site configuration
-site('example.com', {
-  tls: { email: 'admin@example.com' },
-  route(req) {
-    // Pure function for routing logic
-    return 'http://backend:3000';
-  }
-})
+import { serve0 } from '@serve0/core';
 
-// Proxy factory
-createProxy({
-  runtime: 'node', // 'bun' | 'deno' | 'edge'
-  sites: [...],
-  plugins: [...]
-})
+const app = serve0();
+
+// Add routes
+app.handle('example.com', {
+  route(req) {
+    return 'http://backend:3000';
+  },
+});
+
+// Add plugins
+app.plugin(new ConsoleLoggerPlugin());
+
+// Start server
+await app.serve(8080);
 ```
 
 ### Plugin System
@@ -105,69 +85,66 @@ interface ProxyPlugin {
 ### Simple Proxy
 
 ```typescript
-import { createProxy, site, ConsoleLoggerPlugin } from 'serve0';
+import { serve0 } from '@serve0/core';
+import { ConsoleLoggerPlugin } from '@serve0/core';
 
-const proxy = await createProxy({
-  runtime: 'node',
-  sites: [
-    site('localhost', {
-      route(req) {
-        if (req.url?.startsWith('/api')) {
-          return 'http://localhost:4000';
-        }
-        return 'http://localhost:3000';
-      },
-    }),
-  ],
-  plugins: [new ConsoleLoggerPlugin()],
+const app = serve0();
+
+app.handle('localhost', {
+  route(req) {
+    if (req.url?.startsWith('/api')) {
+      return 'http://localhost:4000';
+    }
+    return 'http://localhost:3000';
+  },
 });
 
-await proxy.start();
+app.plugin(new ConsoleLoggerPlugin());
+
+const { stop } = await app.serve(8080);
 ```
 
 ### Load Balanced Services
 
 ```typescript
-import { createProxy, site, RoundRobinBalancerPlugin } from 'serve0';
+import { serve0 } from '@serve0/core';
+import { RoundRobinBalancerPlugin } from '@serve0/core';
 
-const proxy = await createProxy({
-  runtime: 'node',
-  sites: [
-    site('api.example.com', {
-      route(req) {
-        // Load balancer will distribute across these targets
-        return ['http://service1:3000', 'http://service2:3000', 'http://service3:3000'];
-      },
-    }),
-  ],
-  plugins: [new RoundRobinBalancerPlugin()],
+const app = serve0();
+
+app.handle('api.example.com', {
+  route(req) {
+    // Load balancer will distribute across these targets
+    return ['http://service1:3000', 'http://service2:3000', 'http://service3:3000'];
+  },
 });
 
-await proxy.start();
+app.plugin(new RoundRobinBalancerPlugin());
+
+await app.serve(8080);
 ```
 
 ### HTTPS with ACME
 
 ```typescript
-import { createProxy, site, AcmeHttpsPlugin } from 'serve0';
+import { serve0 } from '@serve0/core';
+import { AcmeHttpsPlugin } from '@serve0/core';
 
-const proxy = await createProxy({
-  runtime: 'node',
-  sites: [
-    site('example.com', {
-      tls: {
-        email: 'admin@example.com',
-        domains: ['example.com', 'www.example.com'],
-      },
-      route(req) {
-        return 'http://backend:3000';
-      },
-    }),
-  ],
-  plugins: [new AcmeHttpsPlugin()],
+const app = serve0();
+
+app.handle('example.com', {
+  tls: {
+    email: 'admin@example.com',
+    domains: ['example.com', 'www.example.com'],
+  },
+  route(req) {
+    return 'http://backend:3000';
+  },
 });
 
-await proxy.start();
+app.plugin(new AcmeHttpsPlugin());
+
+await app.serve(443);
 ```
 
 ### Docker Deployment
@@ -189,7 +166,9 @@ npm run docker:prod
 ### Site Configuration
 
 ```typescript
-site('example.com', {
+const app = serve0();
+
+app.handle('example.com', {
   tls: {
     email: 'admin@example.com',
     domains: ['example.com', 'www.example.com'],
@@ -301,8 +280,16 @@ npm run docker:run:deno
 
 ### Core Functions
 
-- `createProxy(options)`: Create a new proxy instance
-- `site(domain, config)`: Configure a site
+- `serve0()`: Create a new Serve0 instance
+- `app.handle(domain, config)`: Add a route handler
+- `app.plugin(plugin)`: Add a plugin
+- `app.serve(port, options?)`: Start the server
+
+### Packages
+
+- **`@serve0/core`**: Core reverse proxy functionality
+- **`@serve0/cloudflare`**: Cloudflare DNS provider for ACME
+- **`@serve0/route53`**: AWS Route53 DNS provider for ACME
 
 ### Plugins
 

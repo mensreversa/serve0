@@ -1,5 +1,5 @@
 import autocannon from 'autocannon';
-import { serve, site } from '@serve0/core';
+import { serve0 } from '@serve0/core';
 import { createServer } from 'http';
 
 async function main() {
@@ -8,8 +8,8 @@ async function main() {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello from backend');
   });
-  
-  await new Promise<void>(resolve => {
+
+  await new Promise<void>((resolve) => {
     backend.listen(3000, () => {
       console.log('Backend server listening on :3000');
       resolve();
@@ -17,18 +17,15 @@ async function main() {
   });
 
   // Start serve0 proxy
-  const proxy = await serve({
-    sites: [
-      site('localhost', {
-        route() {
-          return 'http://localhost:3000';
-        }
-      })
-    ],
-    port: 8080
+  const app = serve0();
+
+  app.handle('localhost', {
+    route() {
+      return 'http://localhost:3000';
+    },
   });
 
-  await proxy.start();
+  const { stop } = await app.serve(8080);
   console.log('Serve0 proxy started on :8080\n');
 
   // Run benchmarks
@@ -37,7 +34,7 @@ async function main() {
     url: 'http://localhost:8080',
     connections: 100,
     duration: 10,
-    pipelining: 10
+    pipelining: 10,
   });
 
   console.log('\n=== Benchmark Results ===');
@@ -46,7 +43,7 @@ async function main() {
   console.log(`Latency: ${result.latency.mean}ms (avg), ${result.latency.p99}ms (p99)`);
   console.log(`Errors: ${result.errors}`);
 
-  await proxy.stop();
+  await stop();
   backend.close();
   process.exit(0);
 }

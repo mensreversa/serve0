@@ -4,9 +4,6 @@
   "description": "A programmable reverse proxy and edge gateway written in TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "serve0": "./dist/cli.js"
-  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint src/**/*.ts",

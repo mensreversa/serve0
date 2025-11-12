@@ -1,5 +1,5 @@
 import autocannon from 'autocannon';
-import { serve, site } from '@serve0/core';
+import { serve0 } from '@serve0/core';
 import { createServer } from 'http';
 
 async function benchmarkLatency() {
@@ -7,30 +7,27 @@ async function benchmarkLatency() {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
   });
-  
-  await new Promise<void>(resolve => {
+
+  await new Promise<void>((resolve) => {
     backend.listen(3000, resolve);
   });
 
-  const proxy = await serve({
-    sites: [
-      site('localhost', {
-        route() {
-          return 'http://localhost:3000';
-        }
-      })
-    ],
-    port: 8080
+  const app = serve0();
+
+  app.handle('localhost', {
+    route() {
+      return 'http://localhost:3000';
+    },
   });
 
-  await proxy.start();
+  const { stop } = await app.serve(8080);
   console.log('Running latency benchmark...\n');
 
   const result = await autocannon({
     url: 'http://localhost:8080',
     connections: 10,
     duration: 30,
-    pipelining: 1
+    pipelining: 1,
   });
 
   console.log('=== Latency Benchmark ===');
@@ -43,7 +40,7 @@ async function benchmarkLatency() {
   console.log(`p99: ${result.latency.p99}ms`);
   console.log(`p99.9: ${result.latency.p999}ms`);
 
-  await proxy.stop();
+  await stop();
   backend.close();
 }
 
